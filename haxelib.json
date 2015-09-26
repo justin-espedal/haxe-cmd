@@ -1,0 +1,12 @@
+{
+  "name": "cmd",
+  "url": "",
+  "license": "MIT",
+  "classPath": "src",
+  "tags": ["command-line"],
+  "description": "Utilities for console applications.",
+  "releasenote": "Initial release.",
+  "version": "1.0.0",
+  "contributors": ["justin.espedal"],
+  "dependecies" : {}
+}
