@@ -16,6 +16,7 @@ class Cmd
 	 * CMD interface
 	\*-------------------------------------*/ 
 	
+	public static var quiet = false;
 	public static var dir = "";
 	
 	public static function cd(path:String)
@@ -24,37 +25,30 @@ class Cmd
 			Sys.setCwd(dir = path);
 		else
 			Sys.setCwd(dir = '$dir/$path'.normalize());
-		Sys.println("> cd " + dir);
+		if(!quiet)
+			Sys.println("> cd " + escapeArg(dir));
 	}
 	
-	static function escapeArgs(?args:Array<String>):Null<Array<String>>
+	static function escapeArgs(?args:Array<String>, ?isNekoCmd:Bool = false):Null<Array<String>>
 	{
 		if(args == null)
 			return args;
 		
-		return args.map
-		(
-			function(arg)
-			{
-				if(arg.indexOf(" ") != -1)
-					return '"$arg"';
-				else
-					return arg;
-			}
-		);
+		var _escapeArg = escapeArg.bind(_, isNekoCmd);
+		return args.map(_escapeArg);
 	}
 	
-	public static function cmd(command:String, ?args:Array<String>):Int
+	static function escapeArg(arg:String, ?isNekoCmd:Bool):String
 	{
-		args = escapeArgs(args);
-		Sys.println("> " + command + " " + (args != null ? args.join(" ") : ""));
-		return Sys.command(command, args);
+		return (arg.indexOf(" ") != -1) ? (isNekoCmd ? '\'"$arg"\'' : '"$arg"') : arg;
 	}
 	
-	public static function readCmd(command:String, ?args:Array<String>):String
+	public static function cmd(command:String, ?isNekoCmd:Bool = false, ?args:Array<String>):CmdOutput
 	{
-		args = escapeArgs(args);
-		Sys.println("> " + command + " " + (args != null ? args.join(" ") : ""));
+		args = escapeArgs(args, isNekoCmd);
+		if(!quiet)
+			Sys.println("> " + command + " " + (args != null ? args.join(" ") : ""));
+		
 		var process:Process = null;
 		try
 		{
@@ -66,42 +60,24 @@ class Cmd
 			return null;
 		}
 		
-		var buffer = new BytesOutput();
-		
-		var waiting = true;
-		while(waiting)
-		{
-			try
-			{
-				var current = process.stdout.readAll(1024);
-				buffer.write(current);
-				if (current.length == 0)
-				{  
-					waiting = false;
-				}
-			}
-			catch (e:Eof)
-			{
-				waiting = false;
-			}
-		}
-		
+		var exitCode = process.exitCode();
+		var output = process.stdout.readAll().toString();
 		process.close();
 		
-		var output = buffer.getBytes().toString();
-		if (output == "")
+		if (exitCode != 0)
 		{
 			var error = process.stderr.readAll().toString();
-			if (error==null || error=="")
+			if (error == null || error == "")
 				error = 'error running $command ${args.join(" ")}';
 			trace(error);
 			
 			return null;
 		}
 		
-		Sys.println(output);
+		if(!quiet)
+			Sys.println(output);
 		
-		return output;
+		return {"exitCode": exitCode, "output": output};
 	}
 	
 	public static function loopFolders():Array<String>
@@ -120,15 +96,9 @@ class Cmd
 		return FileSystem.exists('$dir/$path');
 	}
 	
-	public static function bindCmd(command:String):Dynamic
+	public static function bindCmd(command:String, ?isNekoCmd:Bool = false):Dynamic
 	{
-		var _command:Dynamic = cmd.bind(command, _);
-		return Reflect.makeVarArgs(_command);
-	}
-	
-	public static function bindReadCmd(command:String):Dynamic
-	{
-		var _command:Dynamic = readCmd.bind(command, _);
+		var _command:Dynamic = cmd.bind(command, isNekoCmd, _);
 		return Reflect.makeVarArgs(_command);
 	}
 	
@@ -200,4 +170,10 @@ class Cmd
 		
 		return args;
 	}
+}
+
+typedef CmdOutput =
+{
+	var exitCode:Int;
+	var output:String;
 }
