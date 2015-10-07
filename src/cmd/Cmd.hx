@@ -66,9 +66,10 @@ class Cmd
 		
 		if (exitCode != 0)
 		{
+			Sys.println(output);
 			var error = process.stderr.readAll().toString();
 			if (error == null || error == "")
-				error = 'error running $command ${args.join(" ")}';
+				error = 'error running $command ${args.join(" ")} - exit code $exitCode';
 			trace(error);
 			
 			return null;
