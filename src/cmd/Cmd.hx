@@ -45,9 +45,8 @@ class Cmd
 	
 	public static function cmd(command:String, ?args:Array<String>):CmdOutput
 	{
-		args = escapeArgs(args);
 		if(!quiet)
-			Sys.println("> " + command + " " + (args != null ? args.join(" ") : ""));
+			Sys.println("> " + command + " " + (args != null ? escapeArgs(args).join(" ") : ""));
 		
 		var process:Process = null;
 		try
