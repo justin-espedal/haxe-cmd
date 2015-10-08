@@ -29,23 +29,23 @@ class Cmd
 			Sys.println("> cd " + escapeArg(dir));
 	}
 	
-	static function escapeArgs(?args:Array<String>, ?isNekoCmd:Bool = false):Null<Array<String>>
+	static function escapeArgs(?args:Array<String>):Null<Array<String>>
 	{
 		if(args == null)
 			return args;
 		
-		var _escapeArg = escapeArg.bind(_, isNekoCmd);
+		var _escapeArg = escapeArg.bind(_);
 		return args.map(_escapeArg);
 	}
 	
 	static function escapeArg(arg:String, ?isNekoCmd:Bool):String
 	{
-		return (arg.indexOf(" ") != -1) ? (isNekoCmd ? '\'"$arg"\'' : '"$arg"') : arg;
+		return (arg.indexOf(" ") != -1) ? '"$arg"' : arg;
 	}
 	
-	public static function cmd(command:String, ?isNekoCmd:Bool = false, ?args:Array<String>):CmdOutput
+	public static function cmd(command:String, ?args:Array<String>):CmdOutput
 	{
-		args = escapeArgs(args, isNekoCmd);
+		args = escapeArgs(args);
 		if(!quiet)
 			Sys.println("> " + command + " " + (args != null ? args.join(" ") : ""));
 		
@@ -97,9 +97,9 @@ class Cmd
 		return FileSystem.exists('$dir/$path');
 	}
 	
-	public static function bindCmd(command:String, ?isNekoCmd:Bool = false):Dynamic
+	public static function bindCmd(command:String):Dynamic
 	{
-		var _command:Dynamic = cmd.bind(command, isNekoCmd, _);
+		var _command:Dynamic = cmd.bind(command, _);
 		return Reflect.makeVarArgs(_command);
 	}
 	
@@ -132,44 +132,6 @@ class Cmd
 		}
 		
 		return switches;
-	}
-	
-	public static function getArgs():Array<String>
-	{
-		var argString = Sys.args().join(" ");
-		var isString = false;
-		var stringStart = -1;
-		var args = [];
-		
-		for(i in 0...argString.length)
-		{
-			if(argString.charAt(i) == "\"")
-			{
-				if(!isString)
-					stringStart = i;
-				else
-				{
-					args.push(argString.substring(stringStart + 1, i));
-					stringStart = i;
-				}
-				
-				isString = !isString;	
-			}
-			if(isString)
-				continue;
-			
-			if(argString.charAt(i) == " ")
-			{
-				if(stringStart != i - 1)
-					args.push(argString.substring(stringStart + 1, i));
-				stringStart = i;
-			}
-		}
-		if(stringStart < argString.length - 1)
-			args.push(argString.substring(stringStart + 1));
-		
-		
-		return args;
 	}
 }
 
