@@ -71,7 +71,7 @@ class Cmd
 				error = 'error running $command ${args.join(" ")} - exit code $exitCode';
 			trace(error);
 			
-			return null;
+			return {"exitCode": exitCode, "output": ""};
 		}
 		
 		if(!quiet)
